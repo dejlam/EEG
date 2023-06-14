@@ -1,0 +1,113 @@
+function color_task(saveDir, s_port)
+
+
+prompt = {'Patient ID' '# of trials' 'stimuli_len' 'iti' 'File Name'};
+
+definput = {'RCS02' '6' '20' '10' 'File Name'};
+
+titl = 'Color Task Parameters';
+dims = [1 35];
+answer = inputdlg(prompt,titl,dims,definput);
+
+PatientID = answer{1};
+num_trials = str2num(answer{2}); 
+stimuli_len = str2num(answer{3}); 
+iti = str2num(answer{4}); 
+userFN = answer(5);
+
+created = false;
+
+% saveDir = './';
+
+while created == false
+    saveDR = strcat(string(saveDir), userFN, ".txt");
+    if isfile(saveDR)
+        userFN = strcat(userFN, "_n");
+    else
+        created = true;
+    end
+end
+
+send_ttl = true;
+
+tr_order = [0, 1, 1, 0, 1, 0, 1, 0, 0, 1];
+num_trials = length(tr_order);
+
+
+fid = fopen (saveDR, 'wt');
+fprintf(fid, '\n\n%s', datestr(now,'HH:MM:SS.FFF'));
+fprintf(fid, "\nfilename is: %s", saveDR);
+fprintf(fid, '\nExperiment start time %s', datestr(now,'HH:MM:SS.FFF'));
+
+clear Cogtask_meta   
+PsychDefaultSetup(2);   
+Screen('Preference', 'SkipSyncTests', 1);
+  
+Cogtask_meta.screens = Screen('Screens');  
+Cogtask_meta.screenNumber = max(Cogtask_meta.screens);
+
+black = BlackIndex(Cogtask_meta.screenNumber);  
+white = WhiteIndex(Cogtask_meta.screenNumber);sca
+grey = white / 2;
+[Cogtask_meta.window, Cogtask_meta.windowRect] = PsychImaging('OpenWindow', Cogtask_meta.screenNumber ,grey);
+Screen('TextSize', Cogtask_meta.window, 55);
+[screenXpixels, screenYpixels] = Screen('WindowSize', Cogtask_meta.window);
+[xCenter, yCenter] = RectCenter(Cogtask_meta.windowRect);
+
+
+fprintf(fid, '\n\n%s', datestr(now,'HH:MM:SS.FFF'));
+fprintf(fid, "\ndisplaying instructions");
+
+
+
+if send_ttl
+    usb_ttl(5,s_port,'fixed');
+end
+
+
+InstructionsString = ['You will view either a red or blue screen with a cross in the center. Please do your best to keep your eyes fixated on the cross. Further, you will randomly be asked the color of the previous trial.'];
+
+Screen('FillRect', Cogtask_meta.window, grey);
+
+DrawFormattedText(Cogtask_meta.window, [InstructionsString]...
+    , 'center', 'center', white, 45);
+Screen('Flip', Cogtask_meta.window);
+WaitSecs(1);
+
+timeSecs = KbWait;
+[ keyIsDown, t, keyCode ] = KbCheck;
+keyCode = find(keyCode, 1)
+
+for tr = 1:num_trials
+    if send_ttl
+        usb_ttl(1,s_port,'fixed')
+    end
+    
+    fprintf(fid, "\ntrial: %i", tr);
+    fprintf(fid, '\nTrial start time %s', datestr(now,'HH:MM:SS.FFF'));
+    fprintf(fid, "\ncolor: %i", tr_order(tr));
+    
+    if tr_order(tr) == 1
+        Screen('FillRect', Cogtask_meta.window, [204 0 0]);
+        Cogtask_meta.textString.l1 = ['+'];
+        DrawFormattedText(Cogtask_meta.window, [Cogtask_meta.textString.l1]...
+            , 'center', 'center', white);
+        Screen('Flip', Cogtask_meta.window);
+    else 
+        Screen('FillRect', Cogtask_meta.window, [0 0 204]);
+        Cogtask_meta.textString.l1 = ['+'];
+        DrawFormattedText(Cogtask_meta.window, [Cogtask_meta.textString.l1]...
+            , 'center', 'center', white);
+        Screen('Flip', Cogtask_meta.window);
+    end
+    WaitSecs(stimuli_len);
+    fprintf(fid, '\n\n%s', datestr(now,'HH:MM:SS.FFF'));
+    fprintf(fid, "\nColor end");
+    Screen('FillRect', Cogtask_meta.window, grey);
+    Screen('Flip', Cogtask_meta.window);
+
+    WaitSecs(iti);
+
+    
+end
+Screen('CloseAll')
