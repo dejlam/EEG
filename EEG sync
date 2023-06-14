@@ -1,1 +1,167 @@
+%% MAIN Taskset Run for RC+S Stage 0 Testing
+% This script runs, from start to finish, each individual patient-response
+% task. This is designed for individually isolated instances of each task 
+% that will initiate and run to completion. Data will be saved to XXXXXX.
+
+% Greg C
+% 01/31/21
+% Updated Prasad 7/12/2020
+% Updated file save path for RCS03 10/23/2020
+% Updated for RCS04 on 3/9/2021 - added new USB_TTL output.  
+% VERIFIED by Prasad 3/9/2021
+% VERIFIED by Bella 2/2/2022
+
+% 1.0  ************** ALWAYS RUN THIS CELL FIRST !!!!! ****************
+
+% ADD INSTRICTUIONS
+% ADD TIME TO SWITCH
+% SET UP CAMERA
+
+
+clear
+cd('C:\Users\ChronicPain\Desktop\JS_tasks');
+% fclose(instrfind);
+p1 = genpath('GitHub');     p2 = genpath('Chang Lab');
+addpath(p1) ;               addpath(p2);
+
+% addpath(genpath('C;/Users/ChronicPain/Desktop/js_stage0-main'), '-r');
+folder_path = 'C:\Users\ChronicPain\Desktop\JS_tasks';
+% addpath(genpath(folder_path), '-r');
+addpath(genpath(folder_path));
+
+
+PatientID = 'P0TEST';
+
+% warndlg('MAKE SURE Github is Set to MASTER BRANCH!')
+
+% Directs to proper save paths 
+importin = 'C:\Users\ChronicPain\UCSF DBS for Pain Dropbox\Chronic Pain\Cingulate Laptop Phase 0 Taskdata\data\P0TEST';
+ 
+
+disp(sprintf('Patient ID is %s',PatientID));
+disp(sprintf('Saving files to %s',importin));
+%% close ports if needed
+
+fclose(instrfind);
+
+%% 2.0 SYSTEM CHECK FUNCTIONS - ALWAYS RUN THIS BLOCK BEFORE ANY TASK!!!
+% Recording/Stim Recording Only
+
+s = serial('COM8'); % COM8 corresponds to the USB port we are using (right side of laptop nearest user, that is not taken by dongle); previously COM7
+set(s,'BaudRate',115200,'DataBits',8,'StopBits',1,'Parity','none');
+fopen(s); % Open connection to serial port
+
+s = TTLs_MultipleTypes(s, 4, 'fixed');
+
+
+
+%% expectations
+
+ % 5 random TTLs  
+NKsyncpulse.expectationstarttime = GetSecs;
+s = TTLs_MultipleTypes(s, 5, 'random'); 
+
+saveDirExpectations = [importin '/Expectations/'];
+if ~isfolder(saveDirExpectations)
+    mkdir(saveDirExpectations)
+end
+qst_port = 12;
+
+expectation(saveDirExpectations,s, qst_port);
+   
+
+% Runs final synchronization audio
+% 7 random TTLs
+% NKsyncpulse.oddballendtime = GetSecs;
+% s = TTLs_MultipleTypes(s, 7, 'random');
+% 
+% saveFN = ['NKpulses'  datestr(now,30) '.mat'];
+% save(fullfile(saveDirExpectations,saveFN),'NKsyncpulse');
+
+%% acute block
+ % 5 random TTLs  
+NKsyncpulse.expectationstarttime = GetSecs;
+s = TTLs_MultipleTypes(s, 5, 'random'); 
+
+saveDirAcuteBlock = [importin '/AcuteBlock/'];
+if ~isfolder(saveDirAcuteBlock)
+    mkdir(saveDirAcuteBlock)
+end
+
+
+qst_port = 12;
+acute_pain_block(saveDirAcuteBlock,s,qst_port);
+
+
+% Runs final synchronization audio
+% 7 random TTLs
+NKsyncpulse.oddballendtime = GetSecs;
+s = TTLs_MultipleTypes(s, 7, 'random');
+
+saveFN = ['NKpulses'  datestr(now,30) '.mat'];
+save(fullfile(saveDirAcuteBlock,saveFN),'NKsyncpulse');
+
+
+%% color_task
+ % 5 random TTLs  
+NKsyncpulse.expectationstarttime = GetSecs;
+s = TTLs_MultipleTypes(s, 5, 'random'); 
+
+saveDirColors = [importin '/Colors/'];
+if ~isfolder(saveDirColors)
+    mkdir(saveDirColors)
+end
+
+color_task(saveDirColors,s);
+
+
+% Runs final synchronization audio
+% 7 random TTLs
+NKsyncpulse.oddballendtime = GetSecs;
+s = TTLs_MultipleTypes(s, 7, 'random');
+
+saveFN = ['NKpulses'  datestr(now,30) '.mat'];
+save(fullfile(saveDirColors,saveFN),'NKsyncpulse');
+
+
+%% acute STIM task
+ % 5 random TTLs  
+% NKsyncpulse.expectationstarttime = GetSecs;
+% s = TTLs_MultipleTypes(s, 5, 'random'); 
+
+saveDirAcuteStim = [importin '/AcuteStim/'];
+if ~isfolder(saveDirAcuteStim)
+    mkdir(saveDirAcuteStim)
+end
+
+acute_stim_task(saveDirAcuteStim,s);
+
+
+% Runs final synchronization audio
+% 7 random TTLs
+
+
+NKsyncpulse.oddballendtime = GetSecs;
+s = TTLs_MultipleTypes(s, 7, 'random');
+
+saveFN = ['NKpulses'  datestr(now,30) '.mat'];
+save(fullfile(saveDirAcuteStim,saveFN),'NKsyncpulse');
+
+%% 3.0 FOR STIMULATION TESTING PULSES!
+  
+% Play 5 unique tones
+s = TTLs_MultipleTypes(s, 5, 'random');
+
+uiwait(msgbox('RUN the STIMULATION SETS Now, then click OK when totally finished','Levels','modal'));
+
+% 7 unique TTLs
+s = TTLs_MultipleTypes(s, 7, 'random');
+
+                           
+
+
+%% To close TTL
+
+ fclose(s)
+ 
 
